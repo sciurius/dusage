@@ -3,7 +3,7 @@
 # This program requires perl version 3.0, patchlevel 4 or higher.
 
 # Copyright 1990 Johan Vromans, all rights reserved.
-# This program may be used, modified and distributed as long as
+# Peaceware. This program may be used, modified and distributed as long as
 # this copyright notice remains part of the source. It may not be sold, or 
 # be used to harm any living creature including the world and the universe.
 
