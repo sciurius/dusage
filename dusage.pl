@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 #
 # dusage.pl -- gather disk usage statistics
-# SCCS Status     : @(#)@ dusage	1.9
+# SCCS Status     : $Id: dusage.pl,v 1.10 1996-08-08 10:04:17+02 johanv Exp $
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Tue Feb 19 16:41:23 1991
-# Update Count    : 3
+# Last Modified On: Thu Aug  8 10:04:09 1996
+# Update Count    : 4
 # Status          : OK
 #
 # This program requires perl version 3.0, patchlevel 12 or higher.
