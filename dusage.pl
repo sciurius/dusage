@@ -13,12 +13,13 @@ $my_name = $0;
 
 sub usage {
   local ($help) = shift (@_);
-  local ($usg) = "usage: $my_name [-ghruD][-i input][-p dir] ctlfile";
+  local ($usg) = "usage: $my_name [-fghruD][-i input][-p dir] ctlfile";
   die "$usg\nstopped" unless $help;
   print STDERR "$usg\n";
   print STDERR <<EndOfHelp
 
     -D          - provide debugging info
+    -f          - also report file statistics
     -g          - gather new data
     -h          - this help message
     -i input    - input data as obtained by 'du dir' [def = 'du dir']
@@ -50,15 +51,17 @@ sub do_get_options {
   $noupdate = 1;
   $retain = 0;
   $gather = 0;
+  $allfiles = 0;
 
   # Command line options. We use a modified version of getopts.pl.
 
-  &usage (0) if &Getopts ("Dghi:p:ru");
+  &usage (0) if &Getopts ("Dfghi:p:ru");
   &usage (1) if $opt_h;
   &usage (0) if $#ARGV > 0;
 
   $debug    |= $opt_D if defined $opt_D;	# -D -> debug
-  $gather   |= $opt_g if defined $opt_g;	# -d -> gather new data
+  $allfiles |= $opt_f if defined $opt_f;	# -f -> report all files
+  $gather   |= $opt_g if defined $opt_g;	# -g -> gather new data
   $retain   |= $opt_r if defined $opt_r;	# -r -> retain old entries
   $noupdate = !$opt_u if defined $opt_u;	# -u -> update the control file
   $du        = $opt_i if defined $opt_i;	# -i input file
@@ -72,9 +75,9 @@ sub do_get_options {
     $prefix = $root = "";
   }
   $table    = ($#ARGV == 0) ? shift (@ARGV) : "$prefix.du.ctl";
-
+  $runtype = $allfiles ? "file" : "directory";
   if ($debug) {
-    print STDERR "@(#)@ dusage	1.3 - dusage.pl\n";
+    print STDERR "@(#)@ dusage	1.4 - dusage.pl\n";
     print STDERR "Options:";
     print STDERR " debug" if $debug;	# silly, isn't it...
     print STDERR $noupdate ? " no" : " ", "update";
@@ -84,6 +87,7 @@ sub do_get_options {
     print STDERR "Root = $root [prefix = $prefix]\n";
     print STDERR "Control file = $table\n";
     print STDERR "Input data = $du\n" if defined $du;
+    print STDERR "Run type = $runtype\n";
     print STDERR "\n";
   }
 }
@@ -148,7 +152,7 @@ sub do_parse_ctl {
     if ( $name =~ /\*|\?/ ) {
       print STDERR "glob: $name\n" if $debug;
       foreach $n ( <${name}> ) {
-	next unless -d $n;
+	next unless $allfiles || -d $n;
 	if ( !defined $oldblocks{$n} ) {
 	  $oldblocks{$n} = ":::::::";
 	  push (@targets, $n);
@@ -179,6 +183,7 @@ sub do_gather {
   $last = "///";
   foreach $name (sort (@targets)) {
     next if $name eq "-" || ord($name) == ord("*");
+    next unless $allfiles || -d $name;
     $targets .= "$name//"; 
     next if ($name =~ m|^$last/|);
     push (@list, $name);
@@ -189,7 +194,8 @@ sub do_gather {
   print STDERR "list: @list\n" if $debug;
   print STDERR "reports: @targets\n" if $debug;
 
-  $du = "du @list|" unless defined $du; # in which case we have a data file
+  $du = "du " . ($allfiles ? "-a" : "") . " @list|"
+    unless defined $du; # in which case we have a data file
 
   # Process the data. If a name is found in the target list, 
   # %newblocks will be set to the new blocks value.
@@ -215,7 +221,8 @@ format std_hdr =
 Disk usage statistics                      @<<<<<<<<<<<<<<<
 $date
 
- blocks    +day     +week  (sub)tree
+ blocks    +day     +week  @<<<<<<<<<<<<<<<
+$runtype
 -------  -------  -------  --------------------------------
 .
 format std_out =
