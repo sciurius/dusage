@@ -1,0 +1,183 @@
+.TH DUSAGE 1
+.SH NAME
+dusage \- provide disk usage statistics
+.SH SYNOPSIS
+.B dusage
+.RB [ \-fghruD ]
+.RI "[\fB\-i\fR" " input" ]
+.RI "[\fB\-p\fR" " dir" ]
+.RI [ "control file" ]
+.SH DESCRIPTION
+.I Dusage
+is a perl script which produces disk usage statistics. These
+statistics include the number of blocks, the increment since the previous run
+(which is assumed to be yesterday if run daily), and the increment
+since 7 runs ago (which could be interpreted as a week if run daily).
+.I Dusage
+is driven by a 
+.IR "control file" ,
+which describes the names of the files (directories) to be reported,
+and which also contains the results of previous runs.
+.PP
+When
+.I dusage
+is run, it reads the
+.IR "control file" ,
+[optionally] gathers new disk usage values by calling
+.IR du (1),
+prints the report, and [optionally] updates the
+.I control file
+with the new information.
+.PP
+Filenames in the control file may have wildcards. In this case, the
+wildcards are expanded, and all entries reported. Both the expanded
+names as the wildcard info are maintained in the control file. New
+files in these directories will automatically show up, deleted files
+will disappear when they have run out of data in the control file (but
+see the 
+.B \-r
+option).
+.PP
+The control file may have lines containing of a single dash ``-'',
+which causes the report to start on a new page.
+.PP
+The available command line options are:
+.TP 5
+.B \-D
+Turns on debugging, which yields lots of trace information.
+.TP
+.B \-f
+Reports file statistics also. Default is to only report directories.
+.TP
+.B \-g
+Gathers new data by calling 
+.IR du (1).
+.TP
+.B \-h
+Provides a help message. No work is done.
+.TP
+.BI \-i " input"
+Uses
+.I input
+as data obtained by calling
+.IR du (1).
+.TP
+.BI \-p " dir"
+All filenames in the control file are interpreted relative to this
+directory.
+.TP
+.B \-r
+Retains entries which don't have any data anymore. If this option is
+not used, entries without data are not reported, and removed from the
+control file.
+.TP
+.B \-u
+Update the control file with new values.
+.PP
+The default name for the control file is
+.BR .du.ctl ,
+optionally preceded by the name supplied with the
+.B \-p
+option.
+.SH EXAMPLES
+Given the following control file:
+.sp
+.nf
+.ne 3
+.in +.5i
+maildir
+maildir/*
+src
+.in
+.fi
+.sp
+This will generate the following (example) report when running the
+command ``dusage -gu controlfile'':
+.sp
+.nf
+.ne 7
+.in +.5i
+Disk usage statistics                      Wed Jan 10 13:38
+
+ blocks    +day     +week  directory
+-------  -------  -------  --------------------------------
+   6518                    maildir
+      2                    maildir/dirent
+    498                    src
+.in
+.fi
+.sp
+After updating the control file, it will contain:
+.sp
+.nf
+.ne 4
+.in +.5i
+maildir 6518::::::
+maildir/dirent  2::::::
+maildir/*
+src     498::::::
+.in
+.fi
+.sp
+The names in the control file are separated by the values with a TAB;
+the values are separated with colons. Also, the entries found by
+expanding the wildcard are added.
+.br
+When the program is rerun after one day, it could print the following
+report:
+.sp
+.nf
+.ne 7
+.in +.5i
+Disk usage statistics                      Wed Jan 10 13:38
+
+ blocks    +day     +week  directory
+-------  -------  -------  --------------------------------
+   6524       +6           maildir
+      2        0           maildir/dirent
+    486      -12           src
+.in
+.fi
+.sp
+The control file will contain:
+.sp
+.nf
+.ne 4
+.in +.5i
+maildir 6524:6518:::::
+maildir/dirent  2:2:::::
+maildir/*
+src     486:498:::::
+.in
+.fi
+.sp
+It takes very little fantasy to imagine what will happen on subsequent
+runs...
+.PP
+When the contents of the control file are to be changed, e.g. to add
+new filenames, a normal text editor can be used. Just add or remove
+lines, and they will be taken into account automatically.
+.PP
+When run without 
+.B \-g
+or
+.B \-u
+options, it actually reproduces the report from the previous run.
+.PP
+When multiple runs are required, save the output of
+.IR du (1)
+in a file, and pass this file to
+.I dusage
+using the 
+.BI \-i "file"
+option.
+.SH BUGS
+Running the same control file with different values of the 
+.B \-f
+and
+.B \-r
+options may cause strange results.
+.SH AUTHOR
+Johan Vromans, Multihouse Research, Gouda, The Netherlands.
+.sp
+Send bugs and remarks to <jv@mh.nl> .
