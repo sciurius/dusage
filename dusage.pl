@@ -80,7 +80,7 @@ sub do_get_options {
   $table    = ($#ARGV == 0) ? shift (@ARGV) : "$prefix.du.ctl";
   $runtype = $allfiles ? "file" : "directory";
   if ($debug) {
-    print STDERR "@(#)@ dusage	1.5 - dusage.pl\n";
+    print STDERR "@(#)@ dusage	1.6 - dusage.pl\n";
     print STDERR "Options:";
     print STDERR " debug" if $debug;	# silly, isn't it...
     print STDERR $noupdate ? " no" : " ", "update";
@@ -168,6 +168,7 @@ sub do_parse_ctl {
       print STDERR "glob: $name\n" if $debug;
       foreach $n ( <${name}> ) {
 	next unless $allfiles || -d $n;
+	# Globs never overwrite existing entries
 	if ( !defined $oldblocks{$n} ) {
 	  $oldblocks{$n} = ":::::::";
 	  push (@targets, $n);
@@ -179,9 +180,8 @@ sub do_parse_ctl {
       next;
     }
 
-    # Don't add targets more than once ...
-    push (@targets, "$name") unless (defined $oldblocks{$name});
-    # ... but allow the entry to be rewritten (in case of globs)
+    push (@targets, "$name");
+    # Entry may be rewritten (in case of globs)
     $oldblocks{$name} = join (":", @blocks[0..7]);
 
     print STDERR "tb: $name\t$oldblocks{$name}\n" if $debug;
