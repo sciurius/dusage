@@ -3,7 +3,7 @@
 dusage \- provide disk usage statistics
 .SH SYNOPSIS
 .B dusage
-.RB [ \-fghruD ]
+.RB [ \-afghruD ]
 .RI "[\fB\-i\fR" " input" ]
 .RI "[\fB\-p\fR" " dir" ]
 .RI [ "control file" ]
@@ -38,13 +38,25 @@ see the
 .B \-r
 option).
 .PP
-The control file may have lines containing of a single dash ``-'',
-which causes the report to start on a new page.
+The control file may also contain filenames preceded with an
+exclamation mark ``!''; these entries are skipped. This is meaningful
+in conjunction with wildcards, to exclude entries which result from a
+wildcard expansion.
+.PP
+The control file may have lines starting with a dash ``\-'',
+which causes the report to start on a new page. Any text following the
+dash is placed in the page header, immediately following the text
+``Disk usage statistics''.
 .PP
 The available command line options are:
 .TP 5
 .B \-D
 Turns on debugging, which yields lots of trace information.
+.TP
+.B \-a
+Reports the statistics for this and all previous runs, as opposed to
+the normal case, which is to generate the statistics for this run, and
+the differences between the previous and 7th previous run.
 .TP
 .B \-f
 Reports file statistics also. Default is to only report directories.
@@ -85,8 +97,10 @@ Given the following control file:
 .nf
 .ne 3
 .in +.5i
+\- for manual page
 maildir
 maildir/*
+!maildir/unimportant
 src
 .in
 .fi
@@ -97,7 +111,7 @@ command ``dusage -gu controlfile'':
 .nf
 .ne 7
 .in +.5i
-Disk usage statistics                      Wed Jan 10 13:38
+Disk usage statistics for manual page      Wed Jan 10 13:38
 
  blocks    +day     +week  directory
 -------  -------  -------  --------------------------------
@@ -112,16 +126,19 @@ After updating the control file, it will contain:
 .nf
 .ne 4
 .in +.5i
+\- for manual page
 maildir 6518::::::
 maildir/dirent  2::::::
 maildir/*
+!maildir/unimportant
 src     498::::::
 .in
 .fi
 .sp
 The names in the control file are separated by the values with a TAB;
 the values are separated with colons. Also, the entries found by
-expanding the wildcard are added.
+expanding the wildcard are added. If the wildcard expansion had
+generated a name ``maildir/unimportant'' it would have been skipped.
 .br
 When the program is rerun after one day, it could print the following
 report:
@@ -129,7 +146,7 @@ report:
 .nf
 .ne 7
 .in +.5i
-Disk usage statistics                      Wed Jan 10 13:38
+Disk usage statistics for manual page      Wed Jan 10 13:38
 
  blocks    +day     +week  directory
 -------  -------  -------  --------------------------------
@@ -144,9 +161,11 @@ The control file will contain:
 .nf
 .ne 4
 .in +.5i
+\- for manual page
 maildir 6524:6518:::::
 maildir/dirent  2:2:::::
 maildir/*
+!maildir/unimportant
 src     486:498:::::
 .in
 .fi
