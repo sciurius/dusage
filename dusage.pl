@@ -1,9 +1,11 @@
 #!/usr/bin/perl
-
-# This program requires perl version 3.0, patchlevel 4 or higher.
-
+#
+#	@(#)dusage	1.8
+#
+# This program requires perl version 3.0, patchlevel 12 or higher.
+#
 # Copyright 1990 Johan Vromans, all rights reserved.
-# Peaceware. This program may be used, modified and distributed as long as
+# This program may be used, modified and distributed as long as
 # this copyright notice remains part of the source. It may not be sold, or 
 # be used to harm any living creature including the world and the universe.
 
@@ -57,7 +59,10 @@ sub do_get_options {
 
   # Command line options. We use a modified version of getopts.pl.
 
-  &usage (0) if &Getopts ("Dafghi:p:ru");
+  do "getopts.pl" || die "Cannot load getopts.pl, stopped";
+  die $@ if $@;
+
+  &usage (0) if !&Getopts ("Dafghi:p:ru");
   &usage (1) if $opt_h;
   &usage (0) if $#ARGV > 0;
 
@@ -80,7 +85,7 @@ sub do_get_options {
   $table    = ($#ARGV == 0) ? shift (@ARGV) : "$prefix.du.ctl";
   $runtype = $allfiles ? "file" : "directory";
   if ($debug) {
-    print STDERR "@(#)@ dusage	1.7 - dusage.pl\n";
+    print STDERR "@(#)@ dusage	1.8 - dusage.pl\n";
     print STDERR "Options:";
     print STDERR " debug" if $debug;	# silly, isn't it...
     print STDERR $noupdate ? " no" : " ", "update";
@@ -298,7 +303,12 @@ sub do_report_and_update {
     unshift (@a, $newblocks{$name}) if $gather;
     $name = "." if $name eq $root;
     $name = $' if $name =~ /^$prefix/;		#';
-    if ($#a < 0) {	# no data?
+    print STDERR "Warning: ", 1+$#a, " entries for $name\n"
+      if ($debug && $#a != 8);
+
+    # check for valid data
+    $try = join(":",@a[0..7]);
+    if ( $try eq ":::::::") {
       if ($retain) {
 	@a = ("","","","","","","","");
       }
@@ -308,9 +318,8 @@ sub do_report_and_update {
 	next;
       }
     }
-    print STDERR "Warning: ", 1+$#a, " entries for $name\n"
-      if ($debug && $#a != 8);
-    $line = "$name\t" . join(":",@a[0..7]) . "\n";
+
+    $line = "$name\t$try\n";
     print tb $line unless $noupdate;
     print STDERR "tb: $line" if $debug;
 
@@ -333,47 +342,4 @@ sub do_report_and_update {
 
   # Close control file, if opened
   close (tb) unless $noupdate;
-}
-
-# Modified version of getopts ...
-
-sub Getopts {
-    local($argumentative) = @_;
-    local(@args,$_,$first,$rest);
-    local($opterr) = 0;
-
-    @args = split( / */, $argumentative );
-    while(($_ = $ARGV[0]) =~ /^-(.)(.*)/) {
-	($first,$rest) = ($1,$2);
-	$pos = index($argumentative,$first);
-	if($pos >= $[) {
-	    if($args[$pos+1] eq ':') {
-		shift(@ARGV);
-		if($rest eq '') {
-		    $rest = shift(@ARGV);
-		}
-		eval "\$opt_$first = \$rest;";
-	    }
-	    else {
-		eval "\$opt_$first = 1";
-		if($rest eq '') {
-		    shift(@ARGV);
-		}
-		else {
-		    $ARGV[0] = "-$rest";
-		}
-	    }
-	}
-	else {
-	    print stderr "Unknown option: $first\n";
-	    $opterr++;
-	    if($rest ne '') {
-		$ARGV[0] = "-$rest";
-	    }
-	    else {
-		shift(@ARGV);
-	    }
-	}
-    }
-    return $opterr;
 }
