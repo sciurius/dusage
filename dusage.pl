@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 #
 # dusage.pl -- gather disk usage statistics
-# SCCS Status     : $Id: dusage.pl,v 1.10 1996-08-08 10:04:17+02 johanv Exp $
+# SCCS Status     : $Id: dusage.pl,v 1.11 2000-11-23 11:39:34+01 johanv Exp $
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Thu Aug  8 10:04:09 1996
-# Update Count    : 4
+# Last Modified On: Thu Aug  8 10:18:27 1996
+# Update Count    : 10
 # Status          : OK
 #
 # This program requires perl version 3.0, patchlevel 12 or higher.
@@ -34,7 +34,7 @@ sub usage {
     -h          - this help message
     -i input    - input data as obtained by 'du dir' [def = 'du dir']
     -p dir      - path to which files in the control file are relative
-    -r          - do not discard entries which don't have data
+    -r          - do not discard entries which do not have data
     -u          - update the control file with new values
     ctlfile     - file which controls which dirs to report [def = dir/.du.ctl]
 EndOfHelp
@@ -221,8 +221,14 @@ sub do_gather {
   print STDERR "list: @list\n" if $debug;
   print STDERR "reports: @targets\n" if $debug;
 
-  $du = "du " . ($allfiles ? "-a" : "") . " @list|"
-    unless defined $du; # in which case we have a data file
+  unless ( defined $du ) { # in which case we have a data file
+      $du = "du" . ($allfiles ? " -a" : "");
+      foreach ( @list ) {
+	  s/([\\'" ])/\\$1/g;
+          $du .= " ".$_;
+      }
+      $du .= "|";
+  }
 
   # Process the data. If a name is found in the target list, 
   # %newblocks will be set to the new blocks value.
@@ -253,7 +259,7 @@ $runtype
 -------  -------  -------  --------------------------------
 .
 format std_out =
-@>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<..
+@>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 $blocks, $d_day, $d_week, $name
 .
 
@@ -266,7 +272,7 @@ $runtype
 -------  -------  -------  -------  -------  -------  -------  -------  --------------------------------
 .
 format all_out =
-@>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<..
+@>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 $a[0],  $a[1],   $a[2],   $a[3],   $a[4],   $a[5],   $a[6],   $a[7],    $name
 .
 
