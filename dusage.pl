@@ -1,254 +1,437 @@
-#!/usr/bin/perl
-#
+#!/usr/bin/perl -w
+my $RCS_Id = '$Id: dusage.pl,v 1.11 2000-11-23 11:39:34+01 jv Exp jv $ ';
+
 # dusage.pl -- gather disk usage statistics
-# SCCS Status     : $Id: dusage.pl,v 1.11 2000-11-23 11:39:34+01 johanv Exp $
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Thu Aug  8 10:18:27 1996
-# Update Count    : 10
+# Last Modified On: Fri Nov 24 17:17:18 2000
+# Update Count    : 152
 # Status          : OK
 #
-# This program requires perl version 3.0, patchlevel 12 or higher.
-#
-# Copyright 1990,1991 Johan Vromans, all rights reserved.
-# This program may be used, modified and distributed as long as
-# this copyright notice remains part of the source. It may not be sold, or 
-# be used to harm any living creature including the world and the universe.
+# This program requires Perl version 5.0, or higher.
 
-$my_name = $0;
+################ Common stuff ################
 
-################ usage ################
+use strict;
 
-sub usage {
-  local ($help) = shift (@_);
-  local ($usg) = "usage: $my_name [-afghruD][-i input][-p dir] ctlfile";
-  die "$usg\nstopped" unless $help;
-  print STDERR "$usg\n";
-  print STDERR <<EndOfHelp
+my ($my_name, undef, $my_version) = $RCS_Id =~ /(\w+)\.pl(,v)?\s+(\S+)/;
 
-    -D          - provide debugging info
-    -a          - provide all statis
-    -f          - also report file statistics
-    -g          - gather new data
-    -h          - this help message
-    -i input    - input data as obtained by 'du dir' [def = 'du dir']
-    -p dir      - path to which files in the control file are relative
-    -r          - do not discard entries which do not have data
-    -u          - update the control file with new values
-    ctlfile     - file which controls which dirs to report [def = dir/.du.ctl]
-EndOfHelp
-  ;
-  exit 1;
-}
+################ Command line parameters ################
 
-################ main stream ################
+use Getopt::Long 2.13;
 
-&do_get_options;		# process options
-&do_parse_ctl;			# read the control file
-&do_gather if $gather;		# gather new info
-&do_report_and_update;		# report and update
+my $verbose = 0;                # verbose processing
+my $noupdate = 1;		# do not update the control file
+my $retain = 0;			# retain emtpy entries
+my $gather = 0;			# gather new data
+my $allfiles = 0;		# also report file stats
+my $allstats = 0;		# provide all stats
 
-################ end of main stream ################
+my $root;			# root of all eveil
+my $prefix;			# root prefix for reporting
+my $data;			# the data, or how to get it
+my $table;
 
-################ other subroutines ################
+my $runtype;			# file or directory
 
-sub do_get_options {
+# Development options (not shown with -help).
+my $debug = 0;                  # debugging
+my $trace = 0;                  # trace (show process)
+my $test = 0;                   # test (no actual processing)
 
-  # Default values for options
+app_options();
 
-  $debug = 0;
-  $noupdate = 1;
-  $retain = 0;
-  $gather = 0;
-  $allfiles = 0;
-  $allstats = 0;
+# Options post-processing.
+$trace |= ($debug || $test);
 
-  # Command line options. We use a modified version of getopts.pl.
+################ Presets ################
 
-  do "getopts.pl" || die "Cannot load getopts.pl, stopped";
-  die $@ if $@;
+my $TMPDIR = $ENV{TMPDIR} || '/usr/tmp';
 
-  &usage (0) if !&Getopts ("Dafghi:p:ru");
-  &usage (1) if $opt_h;
-  &usage (0) if $#ARGV > 0;
+################ The Process ################
 
-  $debug    |= $opt_D if defined $opt_D;	# -D -> debug
-  $allstats |= $opt_a if defined $opt_a;	# -a -> all stats
-  $allfiles |= $opt_f if defined $opt_f;	# -f -> report all files
-  $gather   |= $opt_g if defined $opt_g;	# -g -> gather new data
-  $retain   |= $opt_r if defined $opt_r;	# -r -> retain old entries
-  $noupdate = !$opt_u if defined $opt_u;	# -u -> update the control file
-  $du        = $opt_i if defined $opt_i;	# -i input file
-  if ( defined $opt_p ) {			# -p path
-    $root = $opt_p;
-    $root = $` while ($root =~ m|/$|);
-    $prefix = "$root/";
-    $root = "/" if $root eq "";
-  }
-  else {
-    $prefix = $root = "";
-  }
-  $table    = ($#ARGV == 0) ? shift (@ARGV) : "$prefix.du.ctl";
-  $runtype = $allfiles ? "file" : "directory";
-  if ($debug) {
-    print STDERR "@(#)@ dusage	1.9 - dusage.pl\n";
-    print STDERR "Options:";
-    print STDERR " debug" if $debug;	# silly, isn't it...
-    print STDERR $noupdate ? " no" : " ", "update";
-    print STDERR $retain ? " " : " no", "retain";
-    print STDERR $gather ? " " : " no", "gather";
-    print STDERR $allstats ? " " : " no", "allstats";
-    print STDERR "\n";
-    print STDERR "Root = $root [prefix = $prefix]\n";
-    print STDERR "Control file = $table\n";
-    print STDERR "Input data = $du\n" if defined $du;
-    print STDERR "Run type = $runtype\n";
-    print STDERR "\n";
-  }
-}
+my @targets = ();		# directories to process, and more
+my %newblocks = ();		# du values
+my %oldblocks = ();		# previous values
+my @excludes = ();		# excluded entries
 
-sub do_parse_ctl {
+parse_ctl ();			# read the control file
+gather () if $gather;		# gather new info
+report_and_update ();		# wrrite report and update control file
 
-  # Parsing the control file.
-  #
-  # This file contains the names of the (sub)directories to tally,
-  # and the values dereived from previous runs.
-  # The names of the directories are relative to the $root.
-  # The name may contain '*' or '?' characters, and will be globbed if so.
-  # An entry starting with ! is excluded.
-  #
-  # To add a new dir, just add the name. The special name '.' may 
-  # be used to denote the $root directory. If used, '-p' must be
-  # specified.
-  #
-  # Upon completion:
-  #  - %oldblocks is filled with the previous values,
-  #    colon separated, for each directory.
-  #  - @targets contains a list of names to be looked for. These include
-  #    break indications and globs info, which will be stripped from
-  #    the actual search list.
+################ Subroutines ################
 
-  open (tb, "<$table") || die "Cannot open control file $table, stopped";
-  @targets = ();
-  %oldblocks = ();
-  %newblocks = ();
+sub parse_ctl {
 
-  while ($tb = <tb>) {
-    chop ($tb);
+    # Parsing the control file.
+    #
+    # This file contains the names of the (sub)directories to tally,
+    # and the values dereived from previous runs.
+    # The names of the directories are relative to the $root.
+    # The name may contain '*' or '?' characters, and will be globbed if so.
+    # An entry starting with ! is excluded.
+    #
+    # To add a new dir, just add the name. The special name '.' may 
+    # be used to denote the $root directory. If used, '-p' must be
+    # specified.
+    #
+    # Upon completion:
+    #  - %oldblocks is filled with the previous values,
+    #    colon separated, for each directory.
+    #  - @targets contains a list of names to be looked for. These include
+    #    break indications and globs info, which will be stripped from
+    #    the actual search list.
 
-    # preferred syntax: <dir><TAB><size>:<size>:....
-    # allowable	      <dir><TAB><size> <size> ...
-    # possible	      <dir>
+    my $ctl = do { local(*FH); *FH };
+    my $tb;			# ctl file entry
 
-    if ( $tb =~ /^-/ ) {	# break
-      push (@targets, "$tb");
-      printf STDERR "tb: *break* $tb\n" if $debug;
-      next;
+    open ($ctl, "<$table") or die ("Cannot open control file $table: $!\n");
+
+    while ( $tb = <$ctl> ) {
+
+	# syntax:    <dir><TAB><size>:<size>:....
+	# possible   <dir>
+
+	if ( $tb =~ /^-(?!\t)(.*)/ ) { # break
+	    push (@targets, "-$1");
+	    print STDERR ("tb: *break* $1\n") if $debug;
+	    next;
+	}
+
+	if ( $tb =~ /^!(.*)/ ) { # exclude
+	    push (@excludes, $1);
+	    push (@targets, "!".$1);
+	    print STDERR ("tb: *excl* $1\n") if $debug;
+	    next;
+	}
+
+	my @blocks;
+	my $name;
+	if ( $tb =~ /^(.+)\t([\d:]+)/ ) {
+	    $name = $1;
+	    @blocks = split (/:/, $2 . "::::::::", -1);
+	    $#blocks = 7;
+	}
+	else {
+	    chomp ($name = $tb);
+	    @blocks = ("") x 8;
+	}
+
+	if ( $name eq "." ) {
+	    if ( $root eq "" ) {
+		warn ("Warning: \".\" in control file w/o \"-p path\" - ignored\n");
+		next;
+	    }
+	    $name = $root;
+	}
+	else {
+	    $name = $prefix . $name unless ord($name) == ord ("/");
+	}
+
+	# Check for globs ...
+	if ( ($gather|$debug) && $name =~ /\*|\?/ ) {
+	    print STDERR ("glob: $name\n") if $debug;
+	    foreach my $n ( glob($name) ) {
+		next unless $allfiles || -d $n;
+		# Globs never overwrite existing entries
+		unless ( defined $oldblocks{$n} ) {
+		    $oldblocks{$n} = ":::::::";
+		    push (@targets, " $n");
+		}
+		print STDERR ("glob: -> $n\n") if $debug;
+	    }
+	    # Put on the globs list, and terminate this entry
+	    push (@targets, "*$name");
+	    next;
+	}
+
+	push (@targets, " $name");
+
+	# Entry may be rewritten (in case of globs)
+	$oldblocks{$name} = join (":", @blocks[0..7]);
+
+	print STDERR ("tb: $name\t$oldblocks{$name}\n") if $debug;
     }
 
-    if ( $tb =~ /^!/ ) {	# exclude
-      $excl = $';		#';
-      @a = grep ($_ ne $excl, @targets);
-      @targets = @a;
-      push (@targets, "*$tb");
-      printf STDERR "tb: *excl* $tb\n" if $debug;
-      next;
+    if ( @excludes ) {
+	foreach my $excl ( @excludes ) {
+	    my $try = ord($excl) == ord("/") ? " $excl" : " $prefix$excl";
+	    @targets = grep ($_ ne $try, @targets);
+	}
+	print STDERR ("targets after exclusion: @targets\n") if $debug;
     }
 
-    if ($tb =~ /^(.+)\t([\d: ]+)/) {
-      $name = $1;
-      @blocks = split (/[ :]/, $2);
+    close ($ctl);
+}
+
+sub gather {
+
+    # Build a targets match string, and an optimized list of
+    # directories to search. For example, if /foo and /foo/bar are
+    # both in the list, only /foo is used since du will produce the
+    # statistics for /foo/bar as well.
+
+    my %targets = ();
+    my @list = ();
+    # Get all entries, and change the / to nul chars.
+    my @a = map { s;/;\0;g ? ($_) : ($_) }
+      # Only dirs unless $allfiles
+      grep { $allfiles || -d }
+	# And only the file/dir info entries
+	map { /^ (.*)/ ? $1 : () } @targets;
+
+    my $prev = "\0\0\0";
+    foreach my $name ( sort (@a) ) {
+	# If $prev is a complete prefix of $name, we've already got a
+	# better one in the tables.
+	unless ( index ($name, $prev) == 0 ) {
+	    # New test arg -- including the trailing nul.
+	    $prev = $name . "\0";
+	    # Back to normal.
+	    $name =~ s;\0;/;g;
+	    # Register.
+	    push (@list, $name);
+	    $targets{$name}++;
+	}
+
+    }
+
+    if ( $debug ) {
+	print STDERR ("dirs: ", join(" ",sort(keys(%targets))),"\n",
+		      "list: @list\n");
+    }
+
+    my $fh = do { local(*FH); *FH };
+    my $out = do { local(*FH); *FH };
+    if ( !$gather && defined $data ) {		# we have a data file
+	open ($fh, "<$data")
+	  or die ("Cannot get data from $data: $!\n");
+	undef $data;
     }
     else {
-      $name = $tb;
-      @blocks = ("","","","","","","","");
-    }
-
-    if ($name eq ".") {
-      if ( $root eq "" ) {
-	printf STDERR "Warning: \".\" in control file w/o \"-p path\" - ignored\n";
-	next;
-      }
-      $name = $root;
-    } else {
-      $name = $prefix . $name unless ord($name) == ord ("/");
-    }
-
-    # Check for globs ...
-    if ( $gather && $name =~ /\*|\?/ ) {
-      print STDERR "glob: $name\n" if $debug;
-      foreach $n ( <${name}> ) {
-	next unless $allfiles || -d $n;
-	# Globs never overwrite existing entries
-	if ( !defined $oldblocks{$n} ) {
-	  $oldblocks{$n} = ":::::::";
-	  push (@targets, $n);
+	my @du = ("du");
+	push (@du, "-a") if $allfiles;
+	push (@du, @list);
+	my $ret = open ($fh, "-|") || exec @du;
+	die ("Cannot get input from -| @du\n") unless $ret;
+	if ( defined $data ) {
+	    open ($out, ">$data") or die ("Cannot create $data: $!\n");
 	}
-	printf STDERR "glob: -> $n\n" if $debug;
-      }
-      # Put on the globs list, and terminate this entry
-      push (@targets, "*$name");
-      next;
     }
 
-    push (@targets, "$name");
-    # Entry may be rewritten (in case of globs)
-    $oldblocks{$name} = join (":", @blocks[0..7]);
-
-    print STDERR "tb: $name\t$oldblocks{$name}\n" if $debug;
-  }
-  close (tb);
-}
-
-sub do_gather {
-
-  # Build a targets match string, and an optimized list of directories to
-  # search.
-  $targets = "//";
-  @list = ();
-  $last = "///";
-  foreach $name (sort (@targets)) {
-    next if $name =~ /^[-*]/;
-    next unless $allfiles || -d $name;
-    $targets .= "$name//"; 
-    next if ($name =~ m|^$last/|);
-    push (@list, $name);
-    ($last = $name) =~ s/(\W)/\\$1/g; # protect regexp chars in dir names
-  }
-
-  print STDERR "targets: $targets\n" if $debug;
-  print STDERR "list: @list\n" if $debug;
-  print STDERR "reports: @targets\n" if $debug;
-
-  unless ( defined $du ) { # in which case we have a data file
-      $du = "du" . ($allfiles ? " -a" : "");
-      foreach ( @list ) {
-	  s/([\\'" ])/\\$1/g;
-          $du .= " ".$_;
-      }
-      $du .= "|";
-  }
-
-  # Process the data. If a name is found in the target list, 
-  # %newblocks will be set to the new blocks value.
-
-  open (du, "$du") || die "Cannot get data from $du, stopped";
-  while ($du = <du>) {
-    chop ($du);
-    ($blocks,$name) = split (/\t/, $du);
-    if (($i = index ($targets, "//$name//")) >= 0) {
-      # tally and remove entry from search list
-      $newblocks{$name} = $blocks;
-      print STDERR "du: $name $blocks\n" if $debug;
-      substr ($targets, $i, length($name) + 2) = "";
+    # Process the data. If a name is found in the target list,
+    # %newblocks will be set to the new blocks value.
+    %targets = map { $_ => 1 } @targets;
+    my %excludes = map { $prefix.$_ => 1 } @excludes;
+    my $du;
+    while ( defined ($du = <$fh>) ) {
+	print $out $du if defined $data;
+	chomp ($du);
+	my ($blocks, $name) = split (/\t/, $du);
+	if ( exists ($targets{" ".$name}) && !exists ($excludes{$name}) ) {
+	    # Tally and remove entry from search list.
+	    $newblocks{$name} = $blocks;
+	    print STDERR ("du: $name $blocks\n") if $debug;
+	    delete ($targets{" ".$name});
+	}
     }
-  }
-  close (du);
+    close ($fh);
+    close ($out) if defined $data;
 }
 
+# Variables used in the formats.
+my $date;			# date
+my $name;			# name
+my $subtitle;			# subtitle
+my @a;
+my $d_day;			# day delta
+my $d_week;			# week delta
 
-# Report generation
+sub report_and_update {
+
+    my $ctl = do { local(*FH); *FH };
+
+    # Prepare update of the control file
+    if ( !$noupdate ) {
+	if ( !open ($ctl, ">$table") ) {
+	    warn ("Warning: cannot update control file $table [$!] - continuing\n");
+	    $noupdate = 1;
+	}
+    }
+
+    if ( $allstats ) {
+	$^ = "all_hdr";
+	$~ = "all_out";
+    }
+    else {
+	$^ = "std_hdr";
+	$~ = "std_out";
+    }
+
+    $date = localtime;
+    $subtitle = "";
+
+    # In one pass the report is generated, and the control file rewritten.
+
+    foreach my $nam ( @targets ) {
+
+	if ( $nam =~ /^-(.*)/ ) {
+	    $subtitle = $1;
+	    print $ctl ($nam, "\n") unless $noupdate;
+	    print STDERR ("tb: $nam\n") if $debug;
+	    $- = 0;		# force page feed
+	    next;
+	}
+
+	if ($nam  =~ /^\*\Q$prefix\E(.*)/o ) {
+	    print $ctl ("$1\n") unless $noupdate;
+	    print STDERR ("tb: $1\n") if $debug;
+	    next;
+	}
+
+	if ( $nam =~ /^ (.*)/ ) {
+	    $nam = $1
+	}
+	else {
+	    print $ctl $nam, "\n";
+	    print STDERR ("tb: $nam\n") if $debug;
+	    next;
+	}
+
+	print STDERR ("Oops1 $nam\n") unless defined $oldblocks{$nam};
+	print STDERR ("Oops2 $nam\n") unless defined $newblocks{$nam};
+	@a = split (/:/, $oldblocks{$nam} . ":::::::", -1);
+	$#a = 7;
+	unshift (@a, $newblocks{$nam}) if $gather;
+	$nam = "." if $nam eq $root;
+	$nam = $1 if $nam =~ /^\Q$prefix\E(.*)/o;
+	warn ("Warning: ", scalar(@a), " entries for $nam\n")
+	  if $debug && @a != 9;
+
+	# check for valid data
+	my $try = join (":", @a[0..7]);
+	if ( $try eq ":::::::" ) {
+	    if ($retain) {
+		@a = ("") x 8;
+	    }
+	    else {
+		# Discard.
+		print STDERR ("--: $nam\n") if $debug;
+		next;
+	    }
+	}
+
+	my $line = "$nam\t$try\n";
+	print $ctl ($line) unless $noupdate;
+	print STDERR ("tb: $line") if $debug;
+
+	my $blocks = $a[0];
+	unless ( $allstats ) {
+	    $d_day = $d_week = "";
+	    if ( $blocks ne "" ) {
+		if ( $a[1] ne "" ) { # daily delta
+		    $d_day = $blocks - $a[1];
+		    $d_day = "+" . $d_day if $d_day > 0;
+		}
+		if ( $a[7] ne "" ) { # weekly delta
+		    $d_week = $blocks - $a[7];
+		    $d_week = "+" . $d_week if $d_week > 0;
+		}
+	    }
+	}
+
+ 	# Using a outer my variable that is aliased in a loop within a
+ 	# subroutine still doesn't work...
+	$name = $nam;
+	write;
+    }
+
+    # Close control file, if opened
+    close ($ctl) unless $noupdate;
+}
+
+################ Option Processing ################
+
+sub app_options {
+    my $help = 0;               # handled locally
+    my $ident = 0;              # handled locally
+
+    Getopt::Long::Configure qw(bundling);
+    if ( !GetOptions(
+		     'allstats|a'	=> \$allstats,
+		     'allfiles|f'	=> \$allfiles,
+		     'gather|g'		=> \$gather,
+		     'retain|r'		=> \$retain,
+		     'update!'		=> sub { $noupdate = !$_[1] },
+		     'u'		=> sub { $noupdate = !$_[1] },
+		     'data|i=s'		=> \$data,
+		     'dir|p=s'		=> \$root,
+		     'verbose|v'	=> \$verbose,
+		     'trace'		=> \$trace,
+		     'help|?'		=> \$help,
+		     'debug'		=> \$debug,
+		    )
+	 or @ARGV > 1
+	 or $help
+       ) {
+	app_usage(2);
+    }
+
+    if ( defined $root ) {
+	$root =~ s;/+$;;;
+	$prefix = $root . "/";
+	$root = "/" if $root eq "";
+    }
+    else {
+	$prefix = $root = "";
+    }
+
+    $table = @ARGV ? shift(@ARGV) : $prefix . ".du.ctl";
+    $runtype = $allfiles ? "file" : "directory";
+    $noupdate |= !$gather;
+
+    if ( $debug ) {
+	print STDERR
+	  ('dusage $Revision$ ',"\n",
+	   "Options:",
+	   $debug     ? " debug"  : ""	 , # silly, isn't it...
+	   $noupdate  ? " no"	  : " "	 , "update",
+	   $retain    ? " "	  : " no", "retain",
+	   $gather    ? " "	  : " no", "gather",
+	   $allstats  ? " "	  : " no", "allstats",
+	   "\n",
+	   "Root = \"$root\", prefix = \"$prefix\"\n",
+	   "Control file = \"$table\"\n",
+	   $data ? (($gather ? "Output" : "Input") ." data = \"$data\"\n") : "",
+	   "Run type = \"$runtype\"\n",
+	   "\n");
+    }
+}
+
+sub app_usage {
+    my ($exit) = @_;
+    print STDERR <<EndOfUsage;
+usage: $my_name [options] ctlfile
+
+    -a  --allstats          provide all statis
+    -f  --allfiles          also report file statistics
+    -g  --gather            gather new data
+    -i input  --data=input  input data as obtained by 'du dir'
+                            or output with -g
+    -p dir  --dir=dir       path to which files in the ctlfile are relative
+    -r  --retain            do not discard entries which do not have data
+    -u  --update            update the control file with new values
+    -h  --help              this help message
+    --debug                 provide debugging info
+
+    ctlfile                 file which controls which dirs to report
+                            default is dir/.du.ctl
+EndOfUsage
+    exit $exit if $exit;
+}
+
+# Formats.
 
 format std_hdr =
 Disk usage statistics@<<<<<<<<<<<<<<<<<<<<<@<<<<<<<<<<<<<<<
@@ -258,9 +441,10 @@ $subtitle, $date
 $runtype
 -------  -------  -------  --------------------------------
 .
+
 format std_out =
 @>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-$blocks, $d_day, $d_week, $name
+$a[0], $d_day, $d_week, $name
 .
 
 format all_hdr =
@@ -271,94 +455,227 @@ $subtitle, $date
 $runtype
 -------  -------  -------  -------  -------  -------  -------  -------  --------------------------------
 .
+
 format all_out =
 @>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-$a[0],  $a[1],   $a[2],   $a[3],   $a[4],   $a[5],   $a[6],   $a[7],    $name
+@a, $name
 .
 
-sub do_report_and_update {
+__END__
 
-  # Prepare update of the control file
-  if ( !$noupdate ) {
-    if ( !open (tb, ">$table") ) {
-      print STDERR "Warning: cannot update control file $table - continuing\n";
-      $noupdate = 1;
-    }
-  }
+=pod
 
-  if ( $allstats ) {
-    $^ = "all_hdr";
-    $~ = "all_out";
-  }
-  else {
-    $^ = "std_hdr";
-    $~ = "std_out";
-  }
-  $date = `date`;
-  chop ($date);
+=head1 NAME
 
-  # In one pass the report is generated, and the control file rewritten.
+dusage - provide disk usage statistics
 
-  foreach $name (@targets) {
-    if ($name =~ /^-/ ) {
-      $subtitle = $';				#';
-      print tb "$name\n" unless $noupdate;
-      print STDERR "tb: $name\n" if $debug;
-      $- = -1;
-      next;
-    }
-    if ($name  =~ /^\*$prefix/ ) {
-      print tb "$'\n" unless $noupdate;		#';
-      print STDERR "tb: $'\n" if $debug;	#';
-      next;
-    }
-    @a = split (/:/, $oldblocks{$name});
-    unshift (@a, $newblocks{$name}) if $gather;
-    $name = "." if $name eq $root;
-    $name = $' if $name =~ /^$prefix/;		#';
-    print STDERR "Warning: ", 1+$#a, " entries for $name\n"
-      if ($debug && $#a != 8);
+=head1 SYNOPSIS
 
-    # check for valid data
-    $try = join(":",@a[0..7]);
-    if ( $try eq ":::::::") {
-      if ($retain) {
-	@a = ("","","","","","","","");
-      }
-      else {
-	# Discard
-	print STDERR "--: $name\n" if $debug;
-	next;
-      }
-    }
+    usage: dusage [options] ctlfile
 
-    $line = "$name\t$try\n";
-    print tb $line unless $noupdate;
-    print STDERR "tb: $line" if $debug;
+      -a  --allstats          provide all statis
+      -f  --allfiles          also report file statistics
+      -g  --gather            gather new data
+      -i input  --data=input  input data as obtained by 'du dir'
+			      or output with -g
+      -p dir  --dir=dir       path to which files in the ctlfile are relative
+      -r  --retain            do not discard entries which do not have data
+      -u  --update            update the control file with new values
+      -h  --help              this help message
+      --debug                 provide debugging info
 
-    $blocks = $a[0];
-    if ( !$allstats ) {
-      $d_day = $d_week = "";
-      if ($blocks ne "") {
-	if ($a[1] ne "") {		# dayly delta
-	  $d_day = $blocks - $a[1];
-	  $d_day = "+" . $d_day if $d_day > 0;
-	}
-	if ($a[7] ne "") {		# weekly delta
-	  $d_week = $blocks - $a[7];
-	  $d_week = "+" . $d_week if $d_week > 0;
-	}
-      }
-    }
-    write;
-  }
+      ctlfile                 file which controls which dirs to report
+			      default is dir/.du.ctl
 
-  # Close control file, if opened
-  close (tb) unless $noupdate;
-}
+
+=head1 DESCRIPTION
+
+Ever wondered why your free disk space gradually decreases? This
+program may provide you with some useful clues.
+
+B<dusage> is a Perl program which produces disk usage statistics.
+These statistics include the number of blocks that files or
+directories occupy, the increment since the previous run (which is
+assumed to be the day before if run daily), and the increment since 7
+runs ago (which could be interpreted as a week, if run daily).
+
+B<dusage> is driven by a control file that describes the names of the
+files (directories) to be reported. It also contains the results of
+previous runs.
+
+When B<dusage> is run, it reads the control file, optionally gathers
+new disk usage values by calling the B<du> program, prints the report,
+and optionally updates the control file with the new information.
+
+Filenames in the control file may have wildcards. In this case, the
+wildcards are expanded, and all entries reported. Both the expanded
+names as the wildcard info are maintained in the control file. New
+files in these directories will automatically show up, deleted files
+will disappear when they have run out of data in the control file (but
+see the B<-r> option).
+
+Wildcard expansion only adds filenames that are not already on the list.
+
+The control file may also contain filenames preceded with an
+exclamation mark C<!>; these entries are skipped. This is meaningful
+in conjunction with wildcards, to exclude entries which result from a
+wildcard expansion.
+
+The control file may have lines starting with a dash C<-> that is
+I<not> followed by a C<Tab>, which will cause the report to start a
+new page here. Any text following the dash is placed in the page
+header, immediately following the text ``Disk usage statistics''.
+
+The available command line options are:
+
+=over 4
+
+=item B<-a> B<--allstats>
+
+Reports the statistics for this and all previous runs, as opposed to
+the normal case, which is to generate the statistics for this run, and
+the differences between the previous and 7th previous run.
+
+=item B<-f> B<--allfiles>
+
+Reports file statistics also. Default is to only report directories.
+
+=item B<-g> B<--gather>
+
+Gathers new data by calling the B<du> program. See also the C<-i>
+(B<--data>) option below.
+
+=item B<-i> I<file> or <--data> I<file>
+
+With B<-g> (B<--gather>), write the obtained raw info (the output of the B<du> program) to this file for subsequent use.
+
+Without B<-g> (B<--gather>), a data file written in a previous run is reused.
+
+=item B<-p> I<dir> or B<--dir> I<dir>
+
+All filenames in the control file are interpreted relative to this
+directory.
+
+=item B<-r> B<--retain>
+
+Normally, entries that do not have any data anymore are discarded.
+If this option is used, these entries will be retained in the control file.
+
+=item B<-u> B<--update>
+
+Update the control file with new values. Only effective if B<-g>
+(B<--gather>) is also supplied.
+
+=item B<-h> B<--help> B<-?>
+
+Provides a help message. No work is done.
+
+=item B<--debug>
+
+Turns on debugging, which yields lots of trace information.
+
+=back
+
+The default name for the control file is
+I<.du.ctl>, optionally preceded by the name supplied with the
+B<-p> (B<--dir>) option.
+
+=head1 EXAMPLES
+
+Given the following control file:
+
+    - for manual pages
+    maildir
+    maildir/*
+    !maildir/unimportant
+    src
+
+This will generate the following (example) report when running the
+command ``dusage -gu controlfile'':
+
+    Disk usage statistics for manual pages     Wed Nov 23 22:15:14 2000
+
+     blocks    +day     +week  directory
+    -------  -------  -------  --------------------------------
+       6518                    maildir
+	  2                    maildir/dirent
+	498                    src
+
+After updating the control file, it will contain:
+
+    - for manual pages
+    maildir 6518::::::
+    maildir/dirent  2::::::
+    maildir/*
+    !maildir/unimportant
+    src     498::::::
+
+The names in the control file are separated by the values with a C<Tab>;
+the values are separated by colons. Also, the entries found by
+expanding the wildcard are added. If the wildcard expansion had
+generated a name ``maildir/unimportant'' it would have been skipped.
+
+When the program is rerun after one day, it could print the following
+report:
+
+    Disk usage statistics for manual pages      Thu Nov 23 17:25:44 2000
+
+     blocks    +day     +week  directory
+    -------  -------  -------  --------------------------------
+       6524       +6           maildir
+	  2        0           maildir/dirent
+	486      -12           src
+
+The control file will contain:
+
+    - for manual pages
+    maildir 6524:6518:::::
+    maildir/dirent  2:2:::::
+    maildir/*
+    !maildir/unimportant
+    src     486:498:::::
+
+It takes very little fantasy to imagine what will happen on subsequent
+runs...
+
+When the contents of the control file are to be changed, e.g. to add
+new filenames, a normal text editor can be used. Just add or remove
+lines, and they will be taken into account automatically.
+
+When run without B<-g> (B<--gather>) option, it reproduces the report
+from the previous run.
+
+When multiple runs are required, save the output of the B<du> program 
+in a file, and pass this file to B<dusage> using the B<-i> (B<--data>)
+option.
+
+Running the same control file with differing values of the B<-f>
+(B<--allfiles>) or B<-r> (B<--retain>) options may cause strange
+results.
+
+=head1 COMPATIBILITY NOTICE
+
+This program is rewritten for Perl 5.005 and later. However, it is
+still fully backward compatible with its 1990 predecessor.
+
+=head1 AUTHOR
+
+Johan Vromans, Squirrel Consultancy, Haarlem, The Netherlands.
+
+Send bugs and remarks to <jvromans@squirrel.nl>.
+
+=head1 COPYRIGHT
+
+Copyright 1990,1991,2000 Johan Vromans, all rights reserved.
+
+This program may be used, modified and distributed as long as this
+copyright notice remains part of the source. It may not be sold, or
+be used to harm any living creature including the world and the
+universe.
+
+=cut
 
 # Emacs support
 # Local Variables:
-# mode:perl
 # eval:(headers)
 # End:
