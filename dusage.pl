@@ -80,7 +80,7 @@ sub do_get_options {
   $table    = ($#ARGV == 0) ? shift (@ARGV) : "$prefix.du.ctl";
   $runtype = $allfiles ? "file" : "directory";
   if ($debug) {
-    print STDERR "@(#)@ dusage	1.6 - dusage.pl\n";
+    print STDERR "@(#)@ dusage	1.7 - dusage.pl\n";
     print STDERR "Options:";
     print STDERR " debug" if $debug;	# silly, isn't it...
     print STDERR $noupdate ? " no" : " ", "update";
