@@ -1,10 +1,17 @@
 #!/usr/bin/perl
 #
-#	@(#)dusage	1.8
+# dusage.pl -- gather disk usage statistics
+# SCCS Status     : @(#)@ dusage	1.9
+# Author          : Johan Vromans
+# Created On      : Sun Jul  1 21:49:37 1990
+# Last Modified By: Johan Vromans
+# Last Modified On: Tue Feb 19 16:41:23 1991
+# Update Count    : 3
+# Status          : OK
 #
 # This program requires perl version 3.0, patchlevel 12 or higher.
 #
-# Copyright 1990 Johan Vromans, all rights reserved.
+# Copyright 1990,1991 Johan Vromans, all rights reserved.
 # This program may be used, modified and distributed as long as
 # this copyright notice remains part of the source. It may not be sold, or 
 # be used to harm any living creature including the world and the universe.
@@ -85,7 +92,7 @@ sub do_get_options {
   $table    = ($#ARGV == 0) ? shift (@ARGV) : "$prefix.du.ctl";
   $runtype = $allfiles ? "file" : "directory";
   if ($debug) {
-    print STDERR "@(#)@ dusage	1.8 - dusage.pl\n";
+    print STDERR "@(#)@ dusage	1.9 - dusage.pl\n";
     print STDERR "Options:";
     print STDERR " debug" if $debug;	# silly, isn't it...
     print STDERR $noupdate ? " no" : " ", "update";
@@ -207,7 +214,7 @@ sub do_gather {
     $targets .= "$name//"; 
     next if ($name =~ m|^$last/|);
     push (@list, $name);
-    $last = $name;
+    ($last = $name) =~ s/(\W)/\\$1/g; # protect regexp chars in dir names
   }
 
   print STDERR "targets: $targets\n" if $debug;
@@ -343,3 +350,9 @@ sub do_report_and_update {
   # Close control file, if opened
   close (tb) unless $noupdate;
 }
+
+# Emacs support
+# Local Variables:
+# mode:perl
+# eval:(headers)
+# End:
