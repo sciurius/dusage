@@ -5,8 +5,8 @@ my $RCS_Id = '$Id: dusage.pl,v 1.11 2000-11-23 11:39:34+01 jv Exp jv $ ';
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Fri Nov 24 17:17:18 2000
-# Update Count    : 152
+# Last Modified On: Mon Aug 19 11:08:39 2013
+# Update Count    : 156
 # Status          : OK
 #
 # This program requires Perl version 5.0, or higher.
@@ -25,6 +25,7 @@ my $verbose = 0;                # verbose processing
 my $noupdate = 1;		# do not update the control file
 my $retain = 0;			# retain emtpy entries
 my $gather = 0;			# gather new data
+my $follow = 0;			# follow symlinks
 my $allfiles = 0;		# also report file stats
 my $allstats = 0;		# provide all stats
 
@@ -212,6 +213,7 @@ sub gather {
     else {
 	my @du = ("du");
 	push (@du, "-a") if $allfiles;
+	push( @du, "-L" ) if $follow;
 	push (@du, @list);
 	my $ret = open ($fh, "-|") || exec @du;
 	die ("Cannot get input from -| @du\n") unless $ret;
@@ -247,6 +249,7 @@ my $subtitle;			# subtitle
 my @a;
 my $d_day;			# day delta
 my $d_week;			# week delta
+my $blocks;
 
 sub report_and_update {
 
@@ -326,7 +329,7 @@ sub report_and_update {
 	print $ctl ($line) unless $noupdate;
 	print STDERR ("tb: $line") if $debug;
 
-	my $blocks = $a[0];
+	$blocks = $a[0];
 	unless ( $allstats ) {
 	    $d_day = $d_week = "";
 	    if ( $blocks ne "" ) {
@@ -362,6 +365,7 @@ sub app_options {
 		     'allstats|a'	=> \$allstats,
 		     'allfiles|f'	=> \$allfiles,
 		     'gather|g'		=> \$gather,
+		     'follow|L'		=> \$follow,
 		     'retain|r'		=> \$retain,
 		     'update!'		=> sub { $noupdate = !$_[1] },
 		     'u'		=> sub { $noupdate = !$_[1] },
@@ -417,6 +421,7 @@ usage: $my_name [options] ctlfile
     -a  --allstats          provide all statis
     -f  --allfiles          also report file statistics
     -g  --gather            gather new data
+    -L  --follow            follow symlinks
     -i input  --data=input  input data as obtained by 'du dir'
                             or output with -g
     -p dir  --dir=dir       path to which files in the ctlfile are relative
@@ -437,14 +442,14 @@ format std_hdr =
 Disk usage statistics@<<<<<<<<<<<<<<<<<<<<<@<<<<<<<<<<<<<<<
 $subtitle, $date
 
- blocks    +day     +week  @<<<<<<<<<<<<<<<
+  blocks    +day     +week  @<<<<<<<<<<<<<<<
 $runtype
--------  -------  -------  --------------------------------
+--------  -------  -------  --------------------------------
 .
 
 format std_out =
-@>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-$a[0], $d_day, $d_week, $name
+@>>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+$blocks, $d_day, $d_week, $name
 .
 
 format all_hdr =
@@ -455,9 +460,8 @@ $subtitle, $date
 $runtype
 -------  -------  -------  -------  -------  -------  -------  -------  --------------------------------
 .
-
 format all_out =
-@>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+@>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>> @>>>>>>>  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<..
 @a, $name
 .
 
@@ -481,6 +485,7 @@ dusage - provide disk usage statistics
       -p dir  --dir=dir       path to which files in the ctlfile are relative
       -r  --retain            do not discard entries which do not have data
       -u  --update            update the control file with new values
+      -L                      resolve symlinks
       -h  --help              this help message
       --debug                 provide debugging info
 
