@@ -1,12 +1,11 @@
 #!/usr/bin/perl -w
-my $RCS_Id = '$Id: dusage.pl,v 1.11 2000-11-23 11:39:34+01 jv Exp jv $ ';
 
 # dusage.pl -- gather disk usage statistics
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Mon Aug 19 11:08:39 2013
-# Update Count    : 156
+# Last Modified On: Mon Aug 19 11:57:56 2013
+# Update Count    : 165
 # Status          : OK
 #
 # This program requires Perl version 5.0, or higher.
@@ -15,7 +14,7 @@ my $RCS_Id = '$Id: dusage.pl,v 1.11 2000-11-23 11:39:34+01 jv Exp jv $ ';
 
 use strict;
 
-my ($my_name, undef, $my_version) = $RCS_Id =~ /(\w+)\.pl(,v)?\s+(\S+)/;
+my ($my_name, $my_version) = qw( dusage 1.12 );
 
 ################ Command line parameters ################
 
@@ -359,27 +358,42 @@ sub report_and_update {
 sub app_options {
     my $help = 0;               # handled locally
     my $ident = 0;              # handled locally
+    my $man = 0;		# handled locally
+
+    my $pod2usage = sub {
+        # Load Pod::Usage only if needed.
+        require Pod::Usage;
+        Pod::Usage->import;
+        &pod2usage;
+    };
 
     Getopt::Long::Configure qw(bundling);
-    if ( !GetOptions(
-		     'allstats|a'	=> \$allstats,
-		     'allfiles|f'	=> \$allfiles,
-		     'gather|g'		=> \$gather,
-		     'follow|L'		=> \$follow,
-		     'retain|r'		=> \$retain,
-		     'update!'		=> sub { $noupdate = !$_[1] },
-		     'u'		=> sub { $noupdate = !$_[1] },
-		     'data|i=s'		=> \$data,
-		     'dir|p=s'		=> \$root,
-		     'verbose|v'	=> \$verbose,
-		     'trace'		=> \$trace,
-		     'help|?'		=> \$help,
-		     'debug'		=> \$debug,
-		    )
-	 or @ARGV > 1
-	 or $help
-       ) {
-	app_usage(2);
+    GetOptions(
+	       'allstats|a'	=> \$allstats,
+	       'allfiles|f'	=> \$allfiles,
+	       'gather|g'	=> \$gather,
+	       'follow|L'	=> \$follow,
+	       'retain|r'	=> \$retain,
+	       'update!'	=> sub { $noupdate = !$_[1] },
+	       'u'		=> sub { $noupdate = !$_[1] },
+	       'data|i=s'	=> \$data,
+	       'dir|p=s'	=> \$root,
+	       'verbose|v'	=> \$verbose,
+	       'trace'		=> \$trace,
+	       'help|?'		=> \$help,
+	       'man'		=> \$man,
+	       'debug'		=> \$debug,
+	      ) or $pod2usage->(2);
+
+    if ( $ident or $help or $man ) {
+	print STDERR ("This is $my_name $my_version\n");
+    }
+    if ( $man or $help ) {
+	$pod2usage->(1) if $help;
+	$pod2usage->(VERBOSE => 2) if $man;
+    }
+    if ( @ARGV > 1 ) {
+	$pod2usage->(2);
     }
 
     if ( defined $root ) {
@@ -397,7 +411,7 @@ sub app_options {
 
     if ( $debug ) {
 	print STDERR
-	  ('dusage $Revision$ ',"\n",
+	  ("$my_name $my_version\n",
 	   "Options:",
 	   $debug     ? " debug"  : ""	 , # silly, isn't it...
 	   $noupdate  ? " no"	  : " "	 , "update",
@@ -411,29 +425,6 @@ sub app_options {
 	   "Run type = \"$runtype\"\n",
 	   "\n");
     }
-}
-
-sub app_usage {
-    my ($exit) = @_;
-    print STDERR <<EndOfUsage;
-usage: $my_name [options] ctlfile
-
-    -a  --allstats          provide all statis
-    -f  --allfiles          also report file statistics
-    -g  --gather            gather new data
-    -L  --follow            follow symlinks
-    -i input  --data=input  input data as obtained by 'du dir'
-                            or output with -g
-    -p dir  --dir=dir       path to which files in the ctlfile are relative
-    -r  --retain            do not discard entries which do not have data
-    -u  --update            update the control file with new values
-    -h  --help              this help message
-    --debug                 provide debugging info
-
-    ctlfile                 file which controls which dirs to report
-                            default is dir/.du.ctl
-EndOfUsage
-    exit $exit if $exit;
 }
 
 # Formats.
@@ -475,7 +466,7 @@ dusage - provide disk usage statistics
 
 =head1 SYNOPSIS
 
-    usage: dusage [options] ctlfile
+    dusage [options] ctlfile
 
       -a  --allstats          provide all statis
       -f  --allfiles          also report file statistics
@@ -487,11 +478,11 @@ dusage - provide disk usage statistics
       -u  --update            update the control file with new values
       -L                      resolve symlinks
       -h  --help              this help message
+      --man		      show complete documentation
       --debug                 provide debugging info
 
       ctlfile                 file which controls which dirs to report
 			      default is dir/.du.ctl
-
 
 =head1 DESCRIPTION
 
@@ -561,6 +552,10 @@ Without B<-g> (B<--gather>), a data file written in a previous run is reused.
 All filenames in the control file are interpreted relative to this
 directory.
 
+=item B<-L> B<--follow>
+
+Follow symbolic links.
+
 =item B<-r> B<--retain>
 
 Normally, entries that do not have any data anymore are discarded.
@@ -574,6 +569,10 @@ Update the control file with new values. Only effective if B<-g>
 =item B<-h> B<--help> B<-?>
 
 Provides a help message. No work is done.
+
+=item B<--man>
+
+Provides the complete documentation. No work is done.
 
 =item B<--debug>
 
