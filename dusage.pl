@@ -4,8 +4,8 @@
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Mon Aug 19 11:57:56 2013
-# Update Count    : 165
+# Last Modified On: Sun Sep 20 13:57:56 2015
+# Update Count    : 170
 # Status          : OK
 #
 # This program requires Perl version 5.0, or higher.
@@ -213,7 +213,7 @@ sub gather {
 	my @du = ("du");
 	push (@du, "-a") if $allfiles;
 	push( @du, "-L" ) if $follow;
-	push (@du, @list);
+	push (@du, "--", @list);
 	my $ret = open ($fh, "-|") || exec @du;
 	die ("Cannot get input from -| @du\n") unless $ret;
 	if ( defined $data ) {
