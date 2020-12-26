@@ -39,7 +39,7 @@ parts for Perl 5. As a result, the source is extremely ugly.
 
 ## Author
 
-* [Johan Vromans](https://johan.vromans.org/) [\<jvromans@squirrel.nl\>](mailto:jvromans@squirrel.nl)
+* [Johan Vromans](https://johan.vromans.org/)
 
 ## License
 
