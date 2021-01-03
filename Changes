@@ -1,5 +1,9 @@
 Revision history for dusage
 
+2.00	2021-01-03
+
+	Restructure for CPAN release.
+
 1.12    Sat Dec 26 20:35:47 2020 +0100
 
         Update README.md.

@@ -21,7 +21,7 @@ When run daily, `dusage` outputs daily and weekly reports.
 ## Warning
 
 This program was written in 1990 for Perl 3.0. Later I updated some
-parts for Perl 5. As a result, the source is extremely ugly.
+parts for Perl 5. As a result, the source is sometimes ugly.
 
 ## Availability
 
