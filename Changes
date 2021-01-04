@@ -1,5 +1,10 @@
 Revision history for dusage
 
+2.01	2021-01-04
+
+	Add missing test. Dusage now fails on windows. This is correct
+	since it is intended for *nix systems only.
+
 2.00	2021-01-03
 
 	Restructure for CPAN release.

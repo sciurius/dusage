@@ -5,6 +5,8 @@ use warnings;
 
 exit 0 if $ENV{AUTOMATED_TESTING} && $] < 5.010001;
 
+die("OS unsupported\n") if $^O eq 'MSWin32';
+
 # EU::MM 6.5503 is the first version to understand *_REQUIRES.
 use ExtUtils::MakeMaker 6.5503;
 

@@ -4,8 +4,8 @@
 # Author          : Johan Vromans
 # Created On      : Sun Jul  1 21:49:37 1990
 # Last Modified By: Johan Vromans
-# Last Modified On: Sun Jan  3 22:54:16 2021
-# Update Count    : 205
+# Last Modified On: Mon Jan  4 11:43:38 2021
+# Update Count    : 206
 # Status          : OK
 #
 # This program requires Perl version 5.10.1, or higher.
@@ -15,7 +15,7 @@
 use strict;
 
 my $my_name = qw( dusage );
-our $VERSION = "2.00";
+our $VERSION = "2.01";
 
 ################ Command line parameters ################
 
