@@ -4,6 +4,7 @@ Makefile.PL
 README.md
 lib/App/Dusage.pm
 script/dusage.pl
+extra/duhead.pl
 script/pp.PL
 t/00-load.t
 t/01-du.t
