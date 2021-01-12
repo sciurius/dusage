@@ -3,7 +3,7 @@
 `dusage` is a utility to automate generating disk space usage reports.
 
 [![CreatedWithPerl](https://img.shields.io/badge/Perl-5-blue.svg)](https://www.perl.org/)
-[![ArtisticLicense](https://img.shields.io/badge/License-Artistic-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
+[![ArtisticLicense](https://img.shields.io/badge/License-Artistic%202.0-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
 [![FOSSA](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=shield)](https://github.com/sciurius/dusage/LICENSE.md)
 [![LocCount](https://img.shields.io/tokei/lines/github/sciurius/dusage.svg)](https://github.com/XAMPPRocky/tokei)
 [![GitHubCodeSize](https://img.shields.io/github/languages/code-size/sciurius/dusage.svg)](https://github.com/sciurius/dusage)
@@ -42,6 +42,7 @@ This program was originally written in **1990**, for Perl 3.0. Some parts were l
 
 ### Source Code
 
+* [CPAN](https://metacpan.org/pod/App::Dusage)
 * [GitHub](https://github.com/sciurius/dusage)
 
 ## Issue Tracking
@@ -59,6 +60,6 @@ This program was originally written in **1990**, for Perl 3.0. Some parts were l
 ## License
 
 * This software is made available under the terms of the
-*[Artistic License](https://github.com/sciurius/dusage/LICENSE.md)*.
-* [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=small)](https://app.fossa.com/reports/84d80e71-c9d9-43d2-9a88-a77203c96092)
+*[Artistic License 2.0](https://github.com/sciurius/dusage/LICENSE.md)*.
+* [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage/refs/branch/master)
 
