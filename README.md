@@ -14,7 +14,7 @@
 
 ## Overview
 
-Guarding disk space is one of the main problems of system management.
+_Guarding disk space is one of the main problems of system management._
 
 A long time ago, [Johan Vromans](https://johan.vromans.org/) created
 `dusage` by converting an old `awk`/`sed`/`sh` script used to keep
@@ -32,9 +32,9 @@ When run daily, `dusage` outputs daily and weekly reports.
 
 ## Warning
 
-This program was written in 1990 for Perl 3.0. Some parts were
-later updated for Perl 5 compatibility. As a result, the source
-code might be somewhat ugly.
+* This program was written in 1990 for Perl 3.0.
+
+  * Some parts were later updated for Perl 5 compatibility. As a result, the source code might be somewhat ugly.
 
 ## Availability
 
