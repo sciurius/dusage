@@ -23,7 +23,7 @@ use Getopt::Long 2.13;
 
 my $verbose = 0;                # verbose processing
 my $noupdate = 1;		# do not update the control file
-my $retain = 0;			# retain emtpy entries
+my $retain = 0;			# retain empty entries
 my $gather = 0;			# gather new data
 my $follow = 0;			# follow symlinks
 my $allfiles = 0;		# also report file stats
