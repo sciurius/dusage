@@ -37,7 +37,7 @@ reports.
 
 ## Warning
 
-* This program was written in 1990 for Perl 3.0.
+* This program was originally written in **1990**, for Perl 3.0.
 
   * Some parts were later updated for Perl 5 compatibility.
   * As a result, the source code might be somewhat ugly.
@@ -62,5 +62,5 @@ reports.
 
 ## License
 
-This software is made available under the terms of the
+* This software is made available under the terms of the
 *[Artistic License](https://github.com/sciurius/dusage/LICENSE.md)*.
