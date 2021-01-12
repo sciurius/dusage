@@ -8,6 +8,7 @@
 [![ArtisticLicense](https://img.shields.io/badge/License-Artistic-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
 [![FOSSA](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=shield)](https://github.com/sciurius/dusage/LICENSE.md)
 [![LocCount](https://img.shields.io/tokei/lines/github/sciurius/dusage.svg)](https://github.com/XAMPPRocky/tokei)
+
 [![GitHubCodeSize](https://img.shields.io/github/languages/code-size/sciurius/dusage.svg)](https://github.com/sciurius/dusage)
 [![TickgitTODOs](https://img.shields.io/endpoint?url=https://api.tickgit.com/badge?repo=github.com/sciurius/dusage)](https://www.tickgit.com/browse?repo=github.com/sciurius/dusage)
 [![DeepSourceA](https://deepsource.io/gh/johnsonjh/dusage.svg/?label=active+issues)](https://deepsource.io/gh/johnsonjh/dusage/?ref=repository-badge)
@@ -17,7 +18,7 @@
 
 ## Overview
 
->_Guarding disk space is one of the main problems of system management._
+***Guarding disk space is one of the main problems of system management.***
 
 A long time ago, [Johan Vromans](https://johan.vromans.org/) created
 `dusage` by converting an old `awk`/`sed`/`sh` script used to keep
@@ -59,7 +60,7 @@ reports.
 
 ## Author
 
-* [Johan Vromans](https://johan.vromans.org/) [<jvromans@squirrel.nl>](mailto:jvromans@squirrel.nl)
+* [Johan Vromans](https://johan.vromans.org/) [\<jvromans@squirrel.nl\>](mailto:jvromans@squirrel.nl)
 
 ## License
 
