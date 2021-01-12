@@ -4,6 +4,7 @@
 
 [![ArtisticLicense](https://img.shields.io/badge/License-Artistic%202.0-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
 [![FOSSA](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=shield)](https://github.com/sciurius/dusage/LICENSE.md)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/330c09e5b8b747ad9ebcb2351386e3be)](https://app.codacy.com/gh/johnsonjh/dusage?utm_source=github.com&utm_medium=referral&utm_content=johnsonjh/dusage&utm_campaign=Badge_Grade)
 [![LocCount](https://img.shields.io/tokei/lines/github/sciurius/dusage.svg)](https://github.com/XAMPPRocky/tokei)
 [![GitHubCodeSize](https://img.shields.io/github/languages/code-size/sciurius/dusage.svg)](https://github.com/sciurius/dusage)
 [![TickgitTODOs](https://img.shields.io/endpoint?url=https://api.tickgit.com/badge?repo=github.com/sciurius/dusage)](https://www.tickgit.com/browse?repo=github.com/sciurius/dusage)
