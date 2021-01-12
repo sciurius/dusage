@@ -2,7 +2,6 @@
 
 `dusage` is a utility to automate generating disk space usage reports.
 
-[![CreatedWithPerl](https://img.shields.io/badge/Perl-5-blue.svg)](https://www.perl.org/)
 [![ArtisticLicense](https://img.shields.io/badge/License-Artistic%202.0-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
 [![FOSSA](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=shield)](https://github.com/sciurius/dusage/LICENSE.md)
 [![LocCount](https://img.shields.io/tokei/lines/github/sciurius/dusage.svg)](https://github.com/XAMPPRocky/tokei)
