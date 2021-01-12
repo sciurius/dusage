@@ -9,7 +9,6 @@
 [![GitHubCodeSize](https://img.shields.io/github/languages/code-size/sciurius/dusage.svg)](https://github.com/sciurius/dusage)
 [![TickgitTODOs](https://img.shields.io/endpoint?url=https://api.tickgit.com/badge?repo=github.com/sciurius/dusage)](https://www.tickgit.com/browse?repo=github.com/sciurius/dusage)
 [![DeepSourceA](https://deepsource.io/gh/johnsonjh/dusage.svg/?label=active+issues)](https://deepsource.io/gh/johnsonjh/dusage/?ref=repository-badge)
-[![DeepSourceR](https://deepsource.io/gh/johnsonjh/dusage.svg/?label=resolved+issues)](https://deepsource.io/gh/johnsonjh/dusage/?ref=repository-badge)
 
 ------
 
