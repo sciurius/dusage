@@ -2,8 +2,8 @@
 
 `dusage` is a utility to generate disk space usage reports.
 
-[![Perl](https://img.shields.io/badge/perl-%2339457E.svg&logo=perl&logoColor=blue")](https://www.perl.org/)
-[![License](https://img.shields.io/badge/License-Artistic-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
+[![CreatedWithPerl](https://img.shields.io/badge/Created%20with-Perl-blue.svg)](https://www.perl.org/)
+[![ArtisticLicense](https://img.shields.io/badge/License-Artistic-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
 [![LocCount](https://img.shields.io/tokei/lines/github/sciurius/dusage.svg)](https://github.com/XAMPPRocky/tokei)
 [![GitHubCodeSize](https://img.shields.io/github/languages/code-size/sciurius/dusage.svg)](https://github.com/sciurius/dusage)
 [![TickgitTODOs](https://img.shields.io/endpoint?url=https://api.tickgit.com/badge?repo=github.com/sciurius/dusage)](https://www.tickgit.com/browse?repo=github.com/sciurius/dusage)
