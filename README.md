@@ -2,8 +2,6 @@
 
 `dusage` is a utility to automate generating disk space usage reports.
 
-------
-
 [![CreatedWithPerl](https://img.shields.io/badge/Perl-5-blue.svg)](https://www.perl.org/)
 [![ArtisticLicense](https://img.shields.io/badge/License-Artistic-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
 [![FOSSA](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=shield)](https://github.com/sciurius/dusage/LICENSE.md)
@@ -38,10 +36,7 @@ reports.
 
 ## Warning
 
-* This program was originally written in **1990**, for Perl 3.0.
-
-  * Some parts were later updated for Perl 5 compatibility.
-  * As a result, the source code might be somewhat ugly.
+This program was originally written in **1990**, for Perl 3.0. Some parts were later updated for Perl 5 compatibility. As a result, the source code might be somewhat ugly.
 
 ## Availability
 
