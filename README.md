@@ -6,6 +6,7 @@
 
 [![CreatedWithPerl](https://img.shields.io/badge/Created%20with-Perl-blue.svg)](https://www.perl.org/)
 [![ArtisticLicense](https://img.shields.io/badge/License-Artistic-blue.svg)](https://github.com/sciurius/dusage/LICENSE.md)
+[![FOSSA](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=shield)](https://github.com/sciurius/dusage/LICENSE.md)
 [![LocCount](https://img.shields.io/tokei/lines/github/sciurius/dusage.svg)](https://github.com/XAMPPRocky/tokei)
 [![GitHubCodeSize](https://img.shields.io/github/languages/code-size/sciurius/dusage.svg)](https://github.com/sciurius/dusage)
 [![TickgitTODOs](https://img.shields.io/endpoint?url=https://api.tickgit.com/badge?repo=github.com/sciurius/dusage)](https://www.tickgit.com/browse?repo=github.com/sciurius/dusage)
@@ -64,3 +65,5 @@ reports.
 
 * This software is made available under the terms of the
 *[Artistic License](https://github.com/sciurius/dusage/LICENSE.md)*.
+* [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjohnsonjh%2Fdusage.svg?type=small)](https://app.fossa.com/reports/84d80e71-c9d9-43d2-9a88-a77203c96092)
+
