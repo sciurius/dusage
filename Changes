@@ -1,5 +1,11 @@
 Revision history for dusage
 
+0.00
+
+	Small changes and enhancements to README.md and other files,
+	mostly cosmetic and/or spelling fixes.
+	Thanks to Jeffrey H. Johnson for contributing.
+
 2.01	2021-01-04
 
 	Add missing test. Dusage now fails on windows. This is correct
